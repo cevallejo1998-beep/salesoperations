@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Cuota Sell Out · Traditional Trade Perú</title>
+<title>Cuotas · Traditional Trade Perú</title>
 <style>
 :root{
   --ink:#14181B; --soft:#5C636B; --paper:#fff; --bg:#EEF0F2;
@@ -149,6 +149,12 @@ tfoot .iv{font-weight:650}
 .modal h3{margin:0 0 8px;font-size:16px;font-weight:650}
 .modal p{margin:0;font-size:13.5px;color:var(--soft);line-height:1.5}
 .modal .mBtns{display:flex;gap:8px;flex-wrap:wrap;margin-top:20px}
+td.sub,th.sub{border-left:2px solid var(--rule)}
+td.edit{background:#F4F6FC} th.edit{background:#DEE3F3;color:#2B3A67}
+td.up{color:var(--ok);font-weight:600} td.down{color:var(--bad);font-weight:600}
+input.c.wide{width:130px}
+.toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);background:var(--ink);color:#fff;
+  padding:10px 18px;font-size:13px;z-index:95;box-shadow:0 8px 24px rgba(20,24,27,.25)}
 .hidden{display:none}
 .msg{font-size:12.5px;margin-top:8px}
 .msg.err{color:var(--bad)} .msg.ok{color:var(--ok)}
@@ -164,8 +170,8 @@ footer strong{color:var(--ink)}
 <body>
 
 <div id="gate" class="gate">
-  <h2>Cuota Sell Out</h2>
-  <p class="tag">Traditional Trade — Perú</p>
+  <h2>Cuotas TT Perú</h2>
+  <p class="tag">Sell in y sell out — Traditional Trade Perú</p>
   <div id="gateBody">
     <label for="gName">Tu nombre</label>
     <input id="gName" autocomplete="off" placeholder="Nombre y apellido">
@@ -191,8 +197,8 @@ footer strong{color:var(--ink)}
 
 <div class="wrap hidden" id="app">
 <header>
-  <h1>Cuota Sell Out — Traditional Trade Perú</h1>
-  <span class="sub">Ajuste de toneladas y valorización en soles</span>
+  <h1>Cuotas — Traditional Trade Perú</h1>
+  <span class="sub" id="hSub">Sell out en toneladas · sell in en soles</span>
   <div class="who" id="whoAmI"></div>
   <button class="ghost small" id="salir">Salir</button>
 </header>
@@ -205,7 +211,7 @@ footer strong{color:var(--ink)}
 
 <div class="conf-strip">
   <strong>Confidencial — uso interno.</strong> No compartas el enlace ni la clave fuera del
-  grupo autorizado. Esta herramienta cubre únicamente el sell out de Traditional Trade de Perú;
+  grupo autorizado. Esta herramienta cubre el sell in y el sell out de Traditional Trade de Perú;
   el proceso de los demás países de Pacífico está en estandarización.
 </div>
 
@@ -225,9 +231,9 @@ footer strong{color:var(--ink)}
 </div>
 
 <div class="bar">
-  <div class="cell"><span class="n" id="kTons">—</span><span class="l">TONS ingresadas</span></div>
-  <div class="cell"><span class="n" id="kIV">—</span><span class="l">Valorizado S/</span></div>
-  <div class="cell" id="cDif"><span class="n" id="kDif">—</span><span class="l">Diferencia vs IBP</span></div>
+  <div class="cell"><span class="n" id="kTons">—</span><span class="l" id="kTonsL">TONS ingresadas</span></div>
+  <div class="cell"><span class="n" id="kIV">—</span><span class="l" id="kIVL">Valorizado S/</span></div>
+  <div class="cell" id="cDif"><span class="n" id="kDif">—</span><span class="l" id="kDifL">Diferencia vs IBP</span></div>
   <div class="cell"><span class="n" id="kPend">0</span><span class="l">Cambios sin guardar</span></div>
   <div class="acts">
     <button id="save" disabled>Guardar cambios</button>
@@ -237,8 +243,9 @@ footer strong{color:var(--ink)}
 
 <section id="main" class="hidden">
   <div class="tabs" role="tablist">
-    <button class="tab" id="tCli" role="tab" aria-selected="true">Split por cliente<span class="pill">oficial</span></button>
-    <button class="tab" id="tReg" role="tab" aria-selected="false">Split regional<span class="pill">referencial</span></button>
+    <button class="tab" id="tCli" role="tab" aria-selected="true">Sell out · por cliente<span class="pill">oficial</span></button>
+    <button class="tab" id="tReg" role="tab" aria-selected="false">Sell out · regional<span class="pill">referencial</span></button>
+    <button class="tab" id="tSI" role="tab" aria-selected="false">Sell in · S/<span class="pill">total por cliente</span></button>
   </div>
   <div class="bd"><p class="note" id="levelNote"></p></div>
   <div class="toolbar">
@@ -269,6 +276,17 @@ footer strong{color:var(--ink)}
   </div>
   <div class="bd"><div id="resumen"></div></div>
 </section>
+
+<section id="siResSec" class="hidden">
+  <div class="sh">
+    <h2>Sell in por subcanal y región</h2>
+    <span class="note">Total en soles: propuesta contra lo ajustado.</span>
+    <button class="ghost small" id="expSIRes" style="margin-left:auto">Exportar a Excel</button>
+  </div>
+  <div class="bd"><div id="siResumen"></div></div>
+</section>
+
+<div class="toast hidden" id="toast"></div>
 
 <p style="text-align:center"><button class="ghost small hidden" id="toggleAdmin">Configuración</button></p>
 
@@ -320,6 +338,16 @@ footer strong{color:var(--ink)}
     </div>
     <p class="prog hidden" id="prog"></p>
     <p class="msg" id="adminMsg"></p>
+
+    <hr>
+    <h3>Propuesta de sell in del mes</h3>
+    <p class="note">Abre el CSV <strong>Propuesta_SI_para_web</strong> que deja el proceso de Perú en
+      <strong>salidas\PE</strong>. Reemplaza la propuesta anterior; los ajustes guardados no se borran.</p>
+    <div class="fila">
+      <input type="file" id="csvSI" accept=".csv,.txt,.tsv" style="color:var(--adm-fg);max-width:240px">
+      <button id="pubSI">Publicar propuesta de sell in</button>
+    </div>
+    <p class="msg" id="siMsg"></p>
   </div>
 </section>
 </div>
@@ -355,9 +383,10 @@ const SEP="\u001F";
 const CHUNK_BYTES=700000;
 const TOL=0.001;
 
-let dbF=null, base=null, meta=null;
-let saved={reg:{},cli:{},by:"",at:""};
-let local={reg:{},cli:{}};
+let dbF=null, base=null, meta=null, siBase=null;
+let saved={reg:{},cli:{},si:{},by:"",at:""};
+let local={reg:{},cli:{},si:{}};
+let focusPend=null, lastSIRows=null;
 let level="cli", me="", isAdmin=false, filtro="", override=false;
 let lastCalc=null, lastRows=null, lastRef=null;
 
@@ -575,7 +604,8 @@ function rowsOf(){
 }
 function fillRegiones(){
   const set=new Set();
-  for(const lv of ["reg","cli"])
+  if(level==="si"){ if(siBase) siBase.clientes.forEach(c=>set.add(c.rg)); }
+  else for(const lv of ["reg","cli"])
     for(const k in base[lv].cells) set.add(k.split(SEP)[1]);
   const arr=[...set].filter(Boolean).sort((a,b)=>a.localeCompare(b,"es"));
   const sel=$("filtro"), prev=sel.value;
@@ -587,6 +617,11 @@ function fillRegiones(){
 /* ---------- render ---------- */
 function draw(){
   if(!base) return;
+  if(level==="si"){ drawSI(); return; }
+  $("siResSec").classList.add("hidden");
+  $("validador").parentElement.classList.remove("hidden");
+  $("kTonsL").textContent="TONS ingresadas"; $("kIVL").textContent="Valorizado S/";
+  $("kDifL").textContent="Diferencia vs IBP";
   const editable=puedeEditar();
   const calc=compute(); lastCalc=calc;
   const {iv,ed}=calc;
@@ -597,31 +632,36 @@ function draw(){
 
   let h='<table><thead><tr class="g"><th class="k" colspan="'+heads.length+'"></th>'+
     '<th class="let" colspan="3">LET — toneladas y soles</th>'+
-    '<th class="may" colspan="3">MAY — toneladas y soles</th><th></th></tr><tr class="c">';
+    '<th class="may" colspan="3">MAY — toneladas y soles</th><th class="sub" colspan="3">Totales</th></tr><tr class="c">';
   heads.forEach(x=>h+='<th class="k">'+x+'</th>');
   cols.forEach(c=>h+='<th class="'+(c.s==="LET"?"let":"may")+'">'+esc(c.c)+'</th>');
-  h+='<th>Total</th></tr></thead><tbody>';
+  h+='<th class="let sub">LET</th><th class="may">MAY</th><th>Total</th></tr></thead><tbody>';
   const ct=cols.map(()=>0), cvv=cols.map(()=>0);
   let gt=0, gv=0;
-  for(const r of rws){
+  const gS={LET:0,MAY:0}, gSv={LET:0,MAY:0};
+  for(const [ri,r] of rws.entries()){
     h+='<tr>'; r.head.forEach(x=>h+='<td class="k">'+esc(x)+'</td>');
-    let rt=0, rv=0;
+    let rt=0, rv=0; const rS={LET:0,MAY:0}, rSv={LET:0,MAY:0};
     cols.forEach((c,i)=>{
       const k=r.cells[c.c+"|"+c.s], cls=c.s==="LET"?"let":"may";
       if(!k){ h+='<td class="'+cls+' empty">—</td>'; return; }
       const v = k in ed ? ed[k] : b.tot[k];
       const sv = iv[k]||0;
-      rt+=v; ct[i]+=v; rv+=sv; cvv[i]+=sv;
+      rt+=v; ct[i]+=v; rv+=sv; cvv[i]+=sv; rS[c.s]+=v; rSv[c.s]+=sv;
       h+='<td class="'+cls+'"><input class="c'+(k in local[level]?" dirty":"")+
-        '" data-k="'+esc(k)+'" value="'+v.toFixed(3)+'" inputmode="decimal"'+dis+'>'+
+        '" data-k="'+esc(k)+'" data-r="'+ri+'" data-c="'+i+'" value="'+v.toFixed(3)+'" inputmode="decimal"'+dis+'>'+
         '<span class="iv">S/ '+fK(sv)+'</span></td>';
     });
-    gt+=rt; gv+=rv;
-    h+='<td>'+f1(rt)+'<span class="iv">S/ '+fK(rv)+'</span></td></tr>';
+    gt+=rt; gv+=rv; for(const x of SUBS){ gS[x]+=rS[x]; gSv[x]+=rSv[x]; }
+    h+='<td class="let sub">'+f1(rS.LET)+'<span class="iv">S/ '+fK(rSv.LET)+'</span></td>'+
+       '<td class="may">'+f1(rS.MAY)+'<span class="iv">S/ '+fK(rSv.MAY)+'</span></td>'+
+       '<td>'+f1(rt)+'<span class="iv">S/ '+fK(rv)+'</span></td></tr>';
   }
   h+='</tbody><tfoot><tr><td class="k" colspan="'+heads.length+'">Total</td>';
   cols.forEach((c,i)=>h+='<td class="'+(c.s==="LET"?"let":"may")+'">'+f1(ct[i])+
     '<span class="iv">S/ '+fK(cvv[i])+'</span></td>');
+  h+='<td class="let sub">'+f1(gS.LET)+'<span class="iv">S/ '+fK(gSv.LET)+'</span></td>'+
+     '<td class="may">'+f1(gS.MAY)+'<span class="iv">S/ '+fK(gSv.MAY)+'</span></td>';
   h+='<td>'+f1(gt)+'<span class="iv">S/ '+fK(gv)+'</span></td></tr></tfoot></table>';
   $("grid").innerHTML=h;
   $("filtroInfo").textContent = filtro ? rws.length+" filas en "+filtro : rws.length+" filas";
@@ -698,20 +738,15 @@ function draw(){
   /* valorizado por subcanal y región */
   if(level==="cli"){
     $("resSec").classList.remove("hidden");
-    const res=new Map();
-    for(const k in b.cells){
-      const p=k.split(SEP), rk=p[0]+SEP+p[1];
-      res.set(rk,(res.get(rk)||0)+(iv[k]||0));
-    }
-    const arr=[...res.entries()].map(([k,val])=>{const p=k.split(SEP);return {sc:p[0],rg:p[1],val};});
-    arr.sort((a,b)=>{const d=scIdx(a.sc)-scIdx(b.sc); if(d) return d;
-      return a.rg.localeCompare(b.rg,"es");});
+    const arr=resumenSO(b,iv);
     let q='<table><thead><tr><th class="k">Subcanal</th><th class="k">Región</th>'+
-      '<th>Valorizado S/</th></tr></thead><tbody>';
-    let tv=0;
-    for(const x of arr){ tv+=x.val;
-      q+='<tr><td class="k">'+esc(x.sc)+'</td><td class="k">'+esc(x.rg)+'</td><td>'+f0(x.val)+'</td></tr>'; }
-    q+='</tbody><tfoot><tr><td class="k" colspan="2">Total</td><td>'+f0(tv)+'</td></tr></tfoot></table>';
+      '<th class="let">LET S/</th><th class="may">MAY S/</th><th>Total S/</th></tr></thead><tbody>';
+    let tv=0, tl=0, tm=0;
+    for(const x of arr){ tv+=x.val; tl+=x.LET; tm+=x.MAY;
+      q+='<tr><td class="k">'+esc(x.sc)+'</td><td class="k">'+esc(x.rg)+'</td><td class="let">'+f0(x.LET)+
+        '</td><td class="may">'+f0(x.MAY)+'</td><td>'+f0(x.val)+'</td></tr>'; }
+    q+='</tbody><tfoot><tr><td class="k" colspan="2">Total</td><td class="let">'+f0(tl)+'</td><td class="may">'+
+      f0(tm)+'</td><td>'+f0(tv)+'</td></tr></tfoot></table>';
     $("resumen").innerHTML=q;
   } else $("resSec").classList.add("hidden");
 
@@ -730,15 +765,193 @@ function draw(){
     ? "Este es el split que tiene validez para la cuota. Escribe las toneladas y los soles se recalculan al salir de la celda."
     : "Referencial: no alimenta la cuota oficial, pero define cuánto de cada categoría te toca repartir por región en el split por cliente.";
 
-  if(editable) document.querySelectorAll("input.c").forEach(i=>{
-    i.addEventListener("change",()=>{
-      const k=i.dataset.k, val=num(i.value);
-      if(Math.abs(val-(base[level].tot[k]||0))<1e-9 && !(k in saved[level])) delete local[level][k];
-      else local[level][k]=val;
+  if(editable) cablear();
+  pintaVentana();
+}
+
+
+/* ---------- edición: un valor, pegado desde Excel y teclado ---------- */
+function valorBase(lvl,k){
+  if(lvl==="si"){ const c=siBase && siBase.porCod[k]; return c ? c.tot : 0; }
+  return base[lvl].tot[k]||0;
+}
+function aplicar(lvl,k,val){
+  if(Math.abs(val-valorBase(lvl,k))<1e-9 && !(k in saved[lvl])) delete local[lvl][k];
+  else local[lvl][k]=val;
+}
+/* Texto copiado de Excel → filas y columnas (tabulador entre columnas, salto de línea entre filas) */
+function parsePegado(t){
+  const filas=String(t).replace(/\r/g,"").split("\n");
+  if(filas.length && filas[filas.length-1]==="") filas.pop();
+  return filas.map(f=>f.split("\t"));
+}
+let toastT=null;
+function toast(txt){
+  const el=$("toast"); el.textContent=txt; el.classList.remove("hidden");
+  clearTimeout(toastT); toastT=setTimeout(()=>el.classList.add("hidden"),3500);
+}
+function pegar(r0,c0,bloque){
+  let n=0, sinCasilla=0;
+  bloque.forEach((fila,i)=>fila.forEach((txt,j)=>{
+    const r=r0+i, c=c0+j, v=String(txt).trim();
+    if(v==="") return;
+    let k=null;
+    if(level==="si"){ if(j>0) return; k=lastSIRows && lastSIRows[r] ? lastSIRows[r].cod : null; }
+    else {
+      const cols=colDefs();
+      if(lastRows && lastRows[r] && c<cols.length) k=lastRows[r].cells[cols[c].c+"|"+cols[c].s];
+    }
+    if(!k){ sinCasilla++; return; }
+    aplicar(level,k,num(v)); n++;
+  }));
+  draw();
+  toast("Pegaste "+n+(n===1?" valor":" valores")+
+        (sinCasilla?" · "+sinCasilla+" quedaron fuera de la grilla o en casillas sin cuota":""));
+}
+function cablear(){
+  document.querySelectorAll("input.c").forEach(i=>{
+    i.addEventListener("focus",()=>i.select());
+    i.addEventListener("change",()=>{ if(i._hecho) return; aplicar(level,i.dataset.k,num(i.value)); draw(); });
+    i.addEventListener("paste",e=>{
+      const t=(e.clipboardData||window.clipboardData).getData("text");
+      if(!/[\t\n]/.test(t.replace(/\r?\n$/,""))) return;        // un solo valor: pegado normal
+      e.preventDefault(); i._hecho=true;
+      pegar(+i.dataset.r, +i.dataset.c, parsePegado(t));
+    });
+    i.addEventListener("keydown",e=>{
+      let dr=0;
+      if(e.key==="Enter"||e.key==="ArrowDown") dr=1; else if(e.key==="ArrowUp") dr=-1; else return;
+      e.preventDefault(); i._hecho=true;
+      aplicar(level,i.dataset.k,num(i.value));
+      focusPend={r:+i.dataset.r+dr, c:+i.dataset.c};
       draw();
     });
   });
+  if(focusPend){
+    const el=document.querySelector('input.c[data-r="'+focusPend.r+'"][data-c="'+focusPend.c+'"]');
+    focusPend=null;
+    if(el){ el.focus(); el.select(); }
+  }
+}
+
+/* ---------- sell in: total por cliente en soles ---------- */
+function buildSI(text){
+  const lines=String(text).replace(/\r/g,"").split("\n").filter(l=>l.trim());
+  if(lines.length<2) throw new Error("No hay filas que leer.");
+  const h0=lines[0];
+  const sep=h0.includes("\t")?"\t":(h0.split(";").length>h0.split(",").length?";":",");
+  const cols=h0.split(sep).map(x=>x.trim().replace(/^"|"$/g,"").replace(/^\uFEFF/,""));
+  const req=["SUBCANAL","REGION","CUSTOMER CODE","DISTRIBUIDOR","TOTAL"];
+  const miss=req.filter(c=>!cols.includes(c));
+  if(miss.length) throw new Error("Faltan columnas: "+miss.join(", ")+". ¿Es el archivo Propuesta_SI_para_web?");
+  const cats=cols.filter(c=>!req.includes(c) && c);
+  const ix={}; cols.forEach((c,i)=>ix[c]=i);
+  const clientes=[];
+  for(let i=1;i<lines.length;i++){
+    const v=lines[i].split(sep).map(x=>x.trim().replace(/^"|"$/g,""));
+    const cod=String(v[ix["CUSTOMER CODE"]]||"").replace(/\.0+$/,"");
+    if(!cod) continue;
+    const pc={}; cats.forEach(c=>pc[c]=num(v[ix[c]]));
+    clientes.push({cod, sc:v[ix.SUBCANAL]||"", rg:v[ix.REGION]||"", ds:v[ix.DISTRIBUIDOR]||"",
+                   p:pc, tot:num(v[ix.TOTAL])});
+  }
+  if(!clientes.length) throw new Error("Ninguna fila trae CUSTOMER CODE.");
+  return {cats, clientes};
+}
+function prepSI(d){
+  if(!d || !d.clientes) return null;
+  const porCod={}; d.clientes.forEach(c=>porCod[c.cod]=c);
+  return {...d, porCod};
+}
+async function loadSI(){
+  const d=await getDoc(doc(dbF,"cfg","si"));
+  return d.exists() ? prepSI(d.data()) : null;
+}
+function filasSI(){
+  const ed={...saved.si,...local.si};
+  let arr=siBase.clientes.map(c=>{
+    const aj = c.cod in ed ? ed[c.cod] : c.tot;
+    const ajc={}; siBase.cats.forEach(k=>ajc[k]= c.tot ? aj*(c.p[k]||0)/c.tot : 0);
+    return {...c, aj, ajc, dif:aj-c.tot, sinMix: !c.tot && aj!==0};
+  });
+  arr.sort((a,b)=>{const d=scIdx(a.sc)-scIdx(b.sc); if(d) return d;
+    return a.rg.localeCompare(b.rg,"es") || a.ds.localeCompare(b.ds,"es");});
+  return arr;
+}
+function drawSI(){
+  ["refSec","resSec"].forEach(x=>$(x).classList.add("hidden"));
+  $("validador").parentElement.classList.add("hidden");
+  $("kTonsL").textContent="Propuesta S/"; $("kIVL").textContent="Ajustado S/";
+  $("kDifL").textContent="Diferencia vs propuesta";
+  $("cDif").classList.remove("off","good");
+  $("levelNote").textContent="Escribe el total en soles por cliente; también puedes pegar una columna desde Excel. "+
+    "Se abre por categoría con el mix de la propuesta. Las toneladas, el NR y el GR se recalculan en el proceso.";
+  if(!siBase){
+    $("grid").innerHTML='<p class="note" style="padding:14px">Todavía no hay una propuesta de sell in publicada.</p>';
+    $("siResSec").classList.add("hidden");
+    ["kTons","kIV","kDif"].forEach(x=>$(x).textContent="—"); pintaVentana(); return;
+  }
+  const editable=puedeEditar(), dis=editable?"":" disabled", cats=siBase.cats;
+  let todas=filasSI(), rws=filtro ? todas.filter(r=>r.rg===filtro) : todas;
+  lastSIRows=rws;
+  let h='<table><thead><tr class="g"><th class="k" colspan="4"></th>'+
+    '<th colspan="'+(cats.length+1)+'">Propuesta S/</th><th class="edit">Tu ajuste</th>'+
+    '<th class="sub" colspan="'+cats.length+'">Ajustado por categoría S/</th><th class="sub" colspan="2">Variación</th></tr>'+
+    '<tr class="c"><th class="k">Subcanal</th><th class="k">Región</th><th class="k">Código</th><th class="k">Distribuidor</th>';
+  cats.forEach(c=>h+='<th>'+esc(c)+'</th>'); h+='<th>Total</th><th class="edit">Total S/</th>';
+  cats.forEach((c,i)=>h+='<th'+(i===0?' class="sub"':'')+'>'+esc(c)+'</th>');
+  h+='<th class="sub">S/</th><th>%</th></tr></thead><tbody>';
+  const tp={}, ta={}; cats.forEach(c=>{tp[c]=0; ta[c]=0;}); let gp=0, ga=0;
+  rws.forEach((r,ri)=>{
+    h+='<tr><td class="k">'+esc(r.sc)+'</td><td class="k">'+esc(r.rg)+'</td><td class="k">'+esc(r.cod)+
+       '</td><td class="k">'+esc(r.ds)+'</td>';
+    cats.forEach(c=>{ h+='<td>'+fK(r.p[c]||0)+'</td>'; tp[c]+=r.p[c]||0; });
+    h+='<td>'+fK(r.tot)+'</td><td class="edit"><input class="c wide'+(r.cod in local.si?" dirty":"")+
+       '" data-k="'+esc(r.cod)+'" data-r="'+ri+'" data-c="0" value="'+r.aj.toFixed(2)+'" inputmode="decimal"'+dis+'></td>';
+    cats.forEach((c,i)=>{ h+='<td'+(i===0?' class="sub"':'')+'>'+(r.sinMix?'<span title="Sin mix en la propuesta">—</span>':fK(r.ajc[c]))+'</td>'; ta[c]+=r.ajc[c]; });
+    const cls=Math.abs(r.dif)<0.5?"":(r.dif>0?"up":"down");
+    h+='<td class="sub '+cls+'">'+(Math.abs(r.dif)<0.5?"—":fK(r.dif))+'</td><td class="'+cls+'">'+
+       (Math.abs(r.dif)<0.5||!r.tot?"—":(100*r.dif/r.tot).toFixed(1)+"%")+'</td></tr>';
+    gp+=r.tot; ga+=r.aj;
+  });
+  h+='</tbody><tfoot><tr><td class="k" colspan="4">Total</td>';
+  cats.forEach(c=>h+='<td>'+fK(tp[c])+'</td>'); h+='<td>'+fK(gp)+'</td><td class="edit">'+fK(ga)+'</td>';
+  cats.forEach((c,i)=>h+='<td'+(i===0?' class="sub"':'')+'>'+fK(ta[c])+'</td>');
+  const gd=ga-gp;
+  h+='<td class="sub">'+fK(gd)+'</td><td>'+(gp?(100*gd/gp).toFixed(1)+"%":"—")+'</td></tr></tfoot></table>';
+  $("grid").innerHTML=h;
+  $("filtroInfo").textContent = filtro ? rws.length+" clientes en "+filtro : rws.length+" clientes";
+
+  /* resumen por subcanal y región, siempre de todo el país */
+  const res=new Map();
+  for(const r of todas){ const k=r.sc+SEP+r.rg;
+    if(!res.has(k)) res.set(k,{sc:r.sc,rg:r.rg,p:0,a:0}); const o=res.get(k); o.p+=r.tot; o.a+=r.aj; }
+  let q='<table><thead><tr><th class="k">Subcanal</th><th class="k">Región</th><th>Propuesta S/</th>'+
+    '<th>Ajustado S/</th><th>Diferencia</th><th>%</th></tr></thead><tbody>';
+  let tP=0, tA=0;
+  for(const o of res.values()){ tP+=o.p; tA+=o.a; const d=o.a-o.p, cls=Math.abs(d)<0.5?"":(d>0?"up":"down");
+    q+='<tr><td class="k">'+esc(o.sc)+'</td><td class="k">'+esc(o.rg)+'</td><td>'+f0(o.p)+'</td><td>'+f0(o.a)+
+       '</td><td class="'+cls+'">'+f0(d)+'</td><td class="'+cls+'">'+(o.p?(100*d/o.p).toFixed(1)+"%":"—")+'</td></tr>'; }
+  q+='</tbody><tfoot><tr><td class="k" colspan="2">Total</td><td>'+f0(tP)+'</td><td>'+f0(tA)+'</td><td>'+
+     f0(tA-tP)+'</td><td>'+(tP?(100*(tA-tP)/tP).toFixed(1)+"%":"—")+'</td></tr></tfoot></table>';
+  $("siResumen").innerHTML=q; $("siResSec").classList.remove("hidden");
+
+  $("kTons").textContent="S/ "+fK(gp); $("kIV").textContent="S/ "+fK(ga);
+  $("kDif").textContent=(gd>=0?"+":"")+fK(gd);
+  const pend=pendientes();
+  $("kPend").textContent=String(pend);
+  $("save").disabled = pend===0 || !me || !editable;
+  $("undo").disabled = pend===0;
+  if(editable) cablear();
   pintaVentana();
+}
+function exportSI(){
+  const cats=siBase.cats;
+  csvDump("sell_in_por_cliente.csv",
+    ["SUBCANAL","REGION","CUSTOMER CODE","DISTRIBUIDOR",...cats.map(c=>"PROPUESTA "+c),"PROPUESTA TOTAL",
+     "AJUSTE TOTAL",...cats.map(c=>"AJUSTADO "+c),"DIFERENCIA"],
+    lastSIRows.map(r=>[r.sc,r.rg,r.cod,r.ds,...cats.map(c=>(r.p[c]||0).toFixed(2)),r.tot.toFixed(2),
+      r.aj.toFixed(2),...cats.map(c=>r.ajc[c].toFixed(2)),r.dif.toFixed(2)]));
 }
 
 /* ---------- exportar ---------- */
@@ -756,17 +969,18 @@ function exportGrid(){
   const head=[...heads];
   cols.forEach(c=>head.push("TONS "+c.c+" "+c.s));
   cols.forEach(c=>head.push("SOLES "+c.c+" "+c.s));
-  head.push("TONS TOTAL","SOLES TOTAL");
+  head.push("TONS LET","TONS MAY","SOLES LET","SOLES MAY","TONS TOTAL","SOLES TOTAL");
   const data=[];
   for(const r of lastRows){
-    let rt=0, rv=0; const tvals=[], vvals=[];
+    let rt=0, rv=0; const tvals=[], vvals=[], tS={LET:0,MAY:0}, vS={LET:0,MAY:0};
     cols.forEach(c=>{
       const k=r.cells[c.c+"|"+c.s];
       const t=k?(k in ed?ed[k]:b.tot[k]):0, s=k?(iv[k]||0):0;
       tvals.push(k?t.toFixed(3):""); vvals.push(k?s.toFixed(2):"");
-      rt+=t; rv+=s;
+      rt+=t; rv+=s; tS[c.s]+=t; vS[c.s]+=s;
     });
-    data.push([...r.head,...tvals,...vvals,rt.toFixed(3),rv.toFixed(2)]);
+    data.push([...r.head,...tvals,...vvals,tS.LET.toFixed(3),tS.MAY.toFixed(3),
+      vS.LET.toFixed(2),vS.MAY.toFixed(2),rt.toFixed(3),rv.toFixed(2)]);
   }
   csvDump((level==="cli"?"split_cliente":"split_regional")+".csv",head,data);
 }
@@ -775,15 +989,21 @@ function exportRef(){
     ["REGION","CATEGORIA","OBJETIVO REGIONAL TONS","REPARTIDO POR CLIENTE TONS","PENDIENTE"],
     lastRef.map(x=>[x.rg,x.ct,x.regional.toFixed(3),x.cliente.toFixed(3),(-x.dif).toFixed(3)]));
 }
+function resumenSO(b,iv){
+  const res=new Map();
+  for(const k in b.cells){
+    const p=k.split(SEP), rk=p[0]+SEP+p[1], sb=p[p.length-1];
+    if(!res.has(rk)) res.set(rk,{sc:p[0],rg:p[1],LET:0,MAY:0,val:0});
+    const o=res.get(rk), v=iv[k]||0;
+    o.val+=v; if(sb in o) o[sb]+=v;
+  }
+  return [...res.values()].sort((a,b)=>{const d=scIdx(a.sc)-scIdx(b.sc); if(d) return d;
+    return a.rg.localeCompare(b.rg,"es");});
+}
 function exportResumen(){
-  const b=base[level], {iv}=lastCalc, res=new Map();
-  for(const k in b.cells){ const p=k.split(SEP), rk=p[0]+SEP+p[1];
-    res.set(rk,(res.get(rk)||0)+(iv[k]||0)); }
-  const arr=[...res.entries()].map(([k,v])=>{const p=k.split(SEP);return [p[0],p[1],v];});
-  arr.sort((a,b)=>{const d=scIdx(a[0])-scIdx(b[0]); if(d) return d;
-    return a[1].localeCompare(b[1],"es");});
-  csvDump("valorizado_subcanal_region.csv",["SUBCANAL","REGION","VALORIZADO S/"],
-    arr.map(r=>[r[0],r[1],r[2].toFixed(2)]));
+  const arr=resumenSO(base[level], lastCalc.iv);
+  csvDump("valorizado_subcanal_region.csv",["SUBCANAL","REGION","LET S/","MAY S/","TOTAL S/"],
+    arr.map(r=>[r.sc,r.rg,r.LET.toFixed(2),r.MAY.toFixed(2),r.val.toFixed(2)]));
 }
 
 /* ---------- Firestore ---------- */
@@ -834,9 +1054,9 @@ async function save(){
     const ref=doc(dbF,"ajustes","actual");
     const cur=(await getDoc(ref)).data()||{reg:{},cli:{}};
     const merged={reg:{...(cur.reg||{}),...local.reg},cli:{...(cur.cli||{}),...local.cli},
-      by:me, at:new Date().toISOString()};
+      si:{...(cur.si||{}),...local.si}, by:me, at:new Date().toISOString()};
     await setDoc(ref,merged);
-    saved=merged; local={reg:{},cli:{}};
+    saved=merged; local={reg:{},cli:{},si:{}};
     info(); draw();
   }catch(e){ alert("No se pudo guardar: "+(e&&e.message||e)); }
   btn.textContent="Guardar cambios"; draw();
@@ -844,17 +1064,28 @@ async function save(){
 
 /* ---------- eventos ---------- */
 $("save").onclick=save;
-$("undo").onclick=()=>{local={reg:{},cli:{}};draw();};
+$("undo").onclick=()=>{local={reg:{},cli:{},si:{}};draw();};
 $("tReg").onclick=()=>setLevel("reg");
 $("tCli").onclick=()=>setLevel("cli");
+$("tSI").onclick=()=>setLevel("si");
 function setLevel(l){
   level=l;
   $("tReg").setAttribute("aria-selected",String(l==="reg"));
   $("tCli").setAttribute("aria-selected",String(l==="cli"));
+  $("tSI").setAttribute("aria-selected",String(l==="si"));
+  fillRegiones();
   draw();
 }
 $("filtro").addEventListener("change",e=>{ filtro=e.target.value; draw(); });
-$("expGrid").onclick=exportGrid;
+$("expGrid").onclick=()=>level==="si" ? (siBase && exportSI()) : exportGrid();
+$("expSIRes").onclick=()=>{
+  if(!siBase) return;
+  const res=new Map();
+  for(const r of filasSI()){ const k=r.sc+SEP+r.rg; if(!res.has(k)) res.set(k,[r.sc,r.rg,0,0]);
+    const o=res.get(k); o[2]+=r.tot; o[3]+=r.aj; }
+  csvDump("sell_in_subcanal_region.csv",["SUBCANAL","REGION","PROPUESTA S/","AJUSTADO S/","DIFERENCIA"],
+    [...res.values()].map(o=>[o[0],o[1],o[2].toFixed(2),o[3].toFixed(2),(o[3]-o[2]).toFixed(2)]));
+};
 $("expRef").onclick=exportRef;
 $("expRes").onclick=exportResumen;
 $("toggleAdmin").onclick=()=>$("adminBox").classList.toggle("hidden");
@@ -947,21 +1178,42 @@ $("pub").onclick=async()=>{
 };
 $("wipe").onclick=async()=>{
   if(!confirm("Se borran todos los ajustes guardados por los gerentes. ¿Continuar?")) return;
-  await setDoc(doc(dbF,"ajustes","actual"),{reg:{},cli:{},by:me,at:new Date().toISOString()});
+  await setDoc(doc(dbF,"ajustes","actual"),{reg:{},cli:{},si:{},by:me,at:new Date().toISOString()});
 };
 $("exp").onclick=()=>{
   const data=[];
   for(const lv of ["reg","cli"]) for(const k in saved[lv]){
     const p=k.split(SEP);
-    data.push(lv==="reg"?["REGION",p[0],p[1],"",p[2],p[3],saved.reg[k]]
-                        :["CLIENTE",p[0],p[1],p[2],p[3],p[4],saved.cli[k]]);
+    data.push(lv==="reg"?["REGION",p[0],p[1],"",p[2],p[3],saved.reg[k],"",""]
+                        :["CLIENTE",p[0],p[1],p[2],p[3],p[4],saved.cli[k],"",""]);
+  }
+  for(const cod in (saved.si||{})){
+    const c=siBase && siBase.porCod[cod];
+    data.push(["SI_CLIENTE",c?c.sc:"",c?c.rg:"",c?c.ds:"","","","",cod,saved.si[cod]]);
   }
   csvDump("ajustes_cuota.csv",
-    ["NIVEL","SUBCANAL","REGION","DISTRIBUIDOR","Categoria","SubCanalCliente","TONS"],data);
+    ["NIVEL","SUBCANAL","REGION","DISTRIBUIDOR","Categoria","SubCanalCliente","TONS","CUSTOMER CODE","SOLES"],data);
 };
-function pendientes(){ return Object.keys(local.reg).length+Object.keys(local.cli).length; }
+$("pubSI").onclick=async()=>{
+  const m=$("siMsg"), f=$("csvSI").files[0]; m.className="msg";
+  if(!f){ m.className="msg err"; m.textContent="Elige el archivo Propuesta_SI_para_web."; return; }
+  try{
+    const txt=await new Promise((ok,mal)=>{const rd=new FileReader();
+      rd.onload=()=>ok(rd.result); rd.onerror=()=>mal(new Error("No se pudo leer el archivo."));
+      rd.readAsText(f,"UTF-8");});
+    const d=buildSI(txt);
+    await setDoc(doc(dbF,"cfg","si"),{...d, at:new Date().toISOString(), by:me});
+    siBase=prepSI(d);
+    const tot=d.clientes.reduce((a,c)=>a+c.tot,0);
+    m.className="msg ok";
+    m.textContent="Propuesta publicada: "+d.clientes.length+" clientes, "+d.cats.length+
+      " categorías, S/ "+fK(tot)+" en total.";
+    $("csvSI").value=""; fillRegiones(); draw();
+  }catch(e){ m.className="msg err"; m.textContent=(e&&e.message)||String(e); }
+};
+function pendientes(){ return Object.keys(local.reg).length+Object.keys(local.cli).length+Object.keys(local.si).length; }
 function cerrarSesion(){
-  local={reg:{},cli:{}};
+  local={reg:{},cli:{},si:{}};
   me=""; isAdmin=false; override=false; base=null;
   location.reload();
 }
@@ -986,8 +1238,8 @@ $("mGuardar").onclick=async()=>{
     const ref=doc(dbF,"ajustes","actual");
     const cur=(await getDoc(ref)).data()||{reg:{},cli:{}};
     await setDoc(ref,{reg:{...(cur.reg||{}),...local.reg},cli:{...(cur.cli||{}),...local.cli},
-      by:me, at:new Date().toISOString()});
-    local={reg:{},cli:{}};
+      si:{...(cur.si||{}),...local.si}, by:me, at:new Date().toISOString()});
+    local={reg:{},cli:{},si:{}};
     cerrarSesion();
   }catch(e){
     m.className="msg err"; m.textContent="No se pudo guardar: "+(e&&e.message||e)+". Puedes reintentar o salir sin guardar.";
@@ -1000,7 +1252,7 @@ document.addEventListener("keydown",e=>{
 });
 
 window.addEventListener("beforeunload",e=>{
-  if(Object.keys(local.reg).length+Object.keys(local.cli).length>0){e.preventDefault();e.returnValue="";}
+  if(pendientes()>0){e.preventDefault();e.returnValue="";}
 });
 
 function showApp(){
@@ -1038,10 +1290,11 @@ $("gGo").onclick=async()=>{
     } else { m.className="msg err"; m.textContent="Todavía no hay una base publicada. Avisa a Sales Operations."; }
     return;
   }
+  try{ siBase=await loadSI(); }catch(e){ siBase=null; }
   showApp(); fillRegiones();
   onSnapshot(doc(dbF,"ajustes","actual"), snap=>{
     const d=snap.exists()?snap.data():null;
-    saved = d?{reg:d.reg||{},cli:d.cli||{},by:d.by||"",at:d.at||""}:{reg:{},cli:{},by:"",at:""};
+    saved = d?{reg:d.reg||{},cli:d.cli||{},si:d.si||{},by:d.by||"",at:d.at||""}:{reg:{},cli:{},si:{},by:"",at:""};
     info(); draw();
   }, ()=>banner("Se perdió la conexión con los datos compartidos. Recarga la página."));
   onSnapshot(doc(dbF,"cfg","meta"), snap=>{
