@@ -155,6 +155,24 @@ td.up{color:var(--ok);font-weight:600} td.down{color:var(--bad);font-weight:600}
 input.c.wide{width:130px}
 .toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);background:var(--ink);color:#fff;
   padding:10px 18px;font-size:13px;z-index:95;box-shadow:0 8px 24px rgba(20,24,27,.25)}
+.portal{max-width:1100px;margin:0 auto;padding:28px 16px 40px}
+.portal .ptop{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;margin-bottom:18px}
+.portal h1{font-size:22px}
+.portal .marca{font-size:12px;color:var(--soft);letter-spacing:.06em;text-transform:uppercase}
+.pgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:12px}
+.pais{border:1px solid var(--rule);background:var(--paper);padding:14px 16px}
+.pais h3{margin:0 0 2px;font-size:15px;font-weight:650}
+.pais .canal{font-size:12px;color:var(--soft);margin:0 0 12px}
+.pais.prox{opacity:.55}
+.mod{display:block;width:100%;text-align:left;margin-top:8px;padding:10px 12px;background:var(--paper);
+  color:var(--ink);border:1px solid var(--rule)}
+.mod:hover:not(:disabled){border-color:var(--ink)}
+.mod b{display:block;font-size:13.5px}
+.mod span{display:block;font-size:11.5px;color:var(--soft);font-weight:400;margin-top:1px}
+.mod .estado{float:right;font-size:11px;font-weight:600}
+.mod .estado.abierta{color:var(--ok)} .mod .estado.cerrada{color:var(--bad)} .mod .estado.pronto{color:var(--warn-ink)}
+.volver{background:transparent;border:0;color:var(--soft);padding:0;font-weight:500;cursor:pointer}
+.volver:hover{color:var(--ink)}
 .hidden{display:none}
 .msg{font-size:12.5px;margin-top:8px}
 .msg.err{color:var(--bad)} .msg.ok{color:var(--ok)}
@@ -169,9 +187,23 @@ footer strong{color:var(--ink)}
 </head>
 <body>
 
-<div id="gate" class="gate">
-  <h2>Cuotas TT Perú</h2>
-  <p class="tag">Sell in y sell out — Traditional Trade Perú</p>
+<div id="portal" class="portal">
+  <div class="ptop">
+    <div><span class="marca">Mondelēz International</span><h1>Sales Operations Pacífico</h1></div>
+    <span class="who" id="pWho"></span>
+    <button class="ghost small hidden" id="pSalir">Cerrar sesión</button>
+  </div>
+  <section>
+    <div class="sh"><h2>Cuotas</h2><span class="note">Ajuste de cuotas por país. Pide la clave al entrar.</span></div>
+    <div class="bd"><div class="pgrid" id="pPaises"></div></div>
+  </section>
+  <p class="note">Información confidencial de uso interno.</p>
+</div>
+
+<div id="gate" class="gate hidden">
+  <button class="volver" id="gVolver">← Volver al inicio</button>
+  <h2>Cuotas</h2>
+  <p class="tag" id="gTag">Sales Operations Pacífico</p>
   <div id="gateBody">
     <label for="gName">Tu nombre</label>
     <input id="gName" autocomplete="off" placeholder="Nombre y apellido">
@@ -197,8 +229,9 @@ footer strong{color:var(--ink)}
 
 <div class="wrap hidden" id="app">
 <header>
-  <h1>Cuotas — Traditional Trade Perú</h1>
-  <span class="sub" id="hSub">Sell out en toneladas · sell in en soles</span>
+  <button class="volver" id="inicio">← Inicio</button>
+  <h1 id="hTit">Cuotas</h1>
+  <span class="sub" id="hSub"></span>
   <div class="who" id="whoAmI"></div>
   <button class="ghost small" id="salir">Salir</button>
 </header>
@@ -211,7 +244,7 @@ footer strong{color:var(--ink)}
 
 <div class="conf-strip">
   <strong>Confidencial — uso interno.</strong> No compartas el enlace ni la clave fuera del
-  grupo autorizado. Esta herramienta cubre el sell in y el sell out de Traditional Trade de Perú;
+  grupo autorizado. Esta herramienta cubre las cuotas de Traditional Trade;
   el proceso de los demás países de Pacífico está en estandarización.
 </div>
 
@@ -243,9 +276,9 @@ footer strong{color:var(--ink)}
 
 <section id="main" class="hidden">
   <div class="tabs" role="tablist">
-    <button class="tab" id="tCli" role="tab" aria-selected="true">Sell out · por cliente<span class="pill">oficial</span></button>
-    <button class="tab" id="tReg" role="tab" aria-selected="false">Sell out · regional<span class="pill">referencial</span></button>
-    <button class="tab" id="tSI" role="tab" aria-selected="false">Sell in · S/<span class="pill">total por cliente</span></button>
+    <button class="tab" id="tCli" role="tab" aria-selected="true">Split por cliente<span class="pill">oficial</span></button>
+    <button class="tab" id="tReg" role="tab" aria-selected="false">Split regional<span class="pill">referencial</span></button>
+    <button class="tab hidden" id="tSI" role="tab" aria-selected="true">Sell in oficial<span class="pill">oficial</span></button>
   </div>
   <div class="bd"><p class="note" id="levelNote"></p></div>
   <div class="toolbar">
@@ -280,7 +313,7 @@ footer strong{color:var(--ink)}
 <section id="siResSec" class="hidden">
   <div class="sh">
     <h2>Sell in por subcanal y región</h2>
-    <span class="note">Total en soles: propuesta contra lo ajustado.</span>
+    <span class="note">Total en soles, abierto por categoría.</span>
     <button class="ghost small" id="expSIRes" style="margin-left:auto">Exportar a Excel</button>
   </div>
   <div class="bd"><div id="siResumen"></div></div>
@@ -293,8 +326,9 @@ footer strong{color:var(--ink)}
 <section class="admin hidden" id="adminBox">
   <div class="sh"><h2>Configuración — solo administrador</h2></div>
   <div class="bd">
-    <h3>Ventana de registro</h3>
-    <p class="note">Fuera de estas fechas, los gerentes solo pueden consultar. El bloqueo es automático.</p>
+    <h3 id="vTitAdm">Ventana de registro</h3>
+    <p class="note">Fuera de estas fechas, los gerentes solo pueden consultar este módulo. El bloqueo es automático.
+      Sell in y sell out tienen ventanas separadas.</p>
     <div class="fila">
       <div><label for="dOpen">Apertura</label><input type="date" id="dOpen"></div>
       <div><label for="dClose">Cierre</label><input type="date" id="dClose"></div>
@@ -326,6 +360,7 @@ footer strong{color:var(--ink)}
     </div>
     <p class="msg" id="clavesMsg"></p>
 
+    <div id="admSO">
     <hr>
     <h3>Base del mes</h3>
     <p class="note">Abre un CSV o pega <strong>Tbl_Live_SO</strong> con encabezados. Se resume por celda y Format Flavor antes de guardarse.</p>
@@ -333,12 +368,12 @@ footer strong{color:var(--ink)}
     <div class="fila">
       <input type="file" id="csv" accept=".csv,.txt,.tsv" style="color:var(--adm-fg);max-width:240px">
       <button id="pub">Publicar base</button>
-      <button class="ghost" id="exp">Exportar ajustes</button>
-      <button class="ghost" id="wipe">Borrar ajustes guardados</button>
     </div>
     <p class="prog hidden" id="prog"></p>
     <p class="msg" id="adminMsg"></p>
+    </div>
 
+    <div id="admSI">
     <hr>
     <h3>Propuesta de sell in del mes</h3>
     <p class="note">Abre el CSV <strong>Propuesta_SI_para_web</strong> que deja el proceso de Perú en
@@ -348,15 +383,21 @@ footer strong{color:var(--ink)}
       <button id="pubSI">Publicar propuesta de sell in</button>
     </div>
     <p class="msg" id="siMsg"></p>
+    </div>
+
+    <hr>
+    <h3>Ajustes</h3>
+    <p class="note">Un solo archivo con los ajustes de sell in y sell out, para el proceso de Python.</p>
+    <div class="fila">
+      <button class="ghost" id="exp">Exportar ajustes</button>
+      <button class="ghost" id="wipe">Borrar ajustes de este módulo</button>
+    </div>
   </div>
 </section>
 </div>
 
-<footer id="foot" class="hidden">
-  El <strong>split por cliente</strong> es el que tiene validez para la cuota. El
-  <strong>split regional</strong> es solo referencial: sirve de guía para repartir por categoría
-  y no alimenta la cuota oficial. · Cualquier consulta, escribe al área de <strong>Sales Operations</strong>.
-</footer>
+<footer id="foot" class="hidden"><span id="footTxt"></span> · Cualquier consulta, escribe al área de
+  <strong>Sales Operations</strong>.</footer>
 
 <script type="module">
 const firebaseConfig = {
@@ -374,7 +415,22 @@ import { getAuth, signInAnonymously }
 import { getFirestore, doc, getDoc, setDoc, deleteDoc, collection, getDocs, onSnapshot }
   from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
+/* Países y herramientas de cuotas. Para sumar un país, se agrega aquí. Perú usa las
+   rutas de datos originales (prefijo vacío); un país nuevo debe tener su propio prefijo. */
+const PAISES=[
+  {cod:"PE", nombre:"Perú", canal:"Traditional Trade", prefijo:"", modulos:[
+    {id:"so", nombre:"Sell out", desc:"Toneladas por cliente y región"},
+    {id:"si", nombre:"Sell in oficial", desc:"Total en soles por cliente"}]},
+  {cod:"EC", nombre:"Ecuador", canal:"Traditional Trade", modulos:[]},
+  {cod:"BO", nombre:"Bolivia", canal:"Traditional Trade", modulos:[]},
+  {cod:"CL", nombre:"Chile", canal:"Traditional Trade", modulos:[]},
+];
+let pais=PAISES[0], modulo="so", destino=null;
 const CATS=["BISCUITS","GUMS & CANDIES","PBS & MEALS"];
+/* Orden de subcanales en sell in */
+const SC_SI=["DISTRIBUTOR","CODEX","BROKER","WHOLESALER"];
+const scIdxSI=s=>{const u=String(s).toUpperCase(); const i=SC_SI.findIndex(k=>u.includes(k));
+  return i<0?SC_SI.length:i;};
 const SUBS=["LET","MAY"];
 const SC_ORDER=["TDS","ECOMMERCE","BROKER","CODEX","TT WHOLESALERS"];
 const REQ=["SUBCANAL","REGION","SubCanalCliente","Categoria","DISTRIBUIDOR",
@@ -420,14 +476,17 @@ const fechaLarga=iso=>{
 };
 
 /* ---------- ventana de registro ---------- */
-function ventana(){
-  if(meta && meta.emgOn===true)
+/* Cada módulo tiene su ventana: sell out usa openAt/closeAt/emgOn…; sell in, siOpenAt/siCloseAt/siEmgOn… */
+const campo=(n,mod)=>((mod||modulo)==="si" ? "si"+n[0].toUpperCase()+n.slice(1) : n);
+const M=(n,mod)=>meta ? meta[campo(n,mod)] : undefined;
+function ventana(mod){
+  if(M("emgOn",mod)===true)
     return {estado:"forzada", editable:true};
-  if(!meta || !meta.openAt || !meta.closeAt)
+  if(!meta || !M("openAt",mod) || !M("closeAt",mod))
     return {estado:"sin-fechas", editable:true};
   const ahora=new Date();
-  const ini=new Date(meta.openAt+"T00:00:00");
-  const fin=new Date(meta.closeAt+"T23:59:59");
+  const ini=new Date(M("openAt",mod)+"T00:00:00");
+  const fin=new Date(M("closeAt",mod)+"T23:59:59");
   const dia=86400000;
   if(ahora<ini) return {estado:"pronto", editable:false,
     dias:Math.ceil((ini-ahora)/dia)};
@@ -446,8 +505,8 @@ function pintaVentana(){
     el.classList.add("forzada");
     $("vEstado").textContent="Edición habilitada por excepción";
     $("vDetalle").textContent="Sales Operations abrió el registro fuera de la ventana"+
-      (meta.emgBy?", a solicitud. Autorizó "+meta.emgBy:"")+
-      (meta.emgAt?" el "+new Date(meta.emgAt).toLocaleString("es-PE"):"")+
+      (M("emgBy")?", a solicitud. Autorizó "+M("emgBy"):"")+
+      (M("emgAt")?" el "+new Date(M("emgAt")).toLocaleString("es-PE"):"")+
       ". Guarda tus cambios cuanto antes.";
     return;
   }
@@ -460,21 +519,21 @@ function pintaVentana(){
   if(v.estado==="abierta"){
     el.classList.add("abierta");
     $("vEstado").textContent="Ventana de ajuste abierta";
-    $("vDetalle").textContent="Cierra el "+fechaLarga(meta.closeAt)+". Después de esa fecha solo podrás consultar.";
+    $("vDetalle").textContent="Cierra el "+fechaLarga(M("closeAt"))+". Después de esa fecha solo podrás consultar.";
     $("vDias").classList.remove("hidden");
     $("vDiasN").textContent=String(v.dias);
     $("vDiasT").textContent=v.dias===1?"día restante":"días restantes";
   } else if(v.estado==="pronto"){
     el.classList.add("pronto");
     $("vEstado").textContent="Ventana aún no abre";
-    $("vDetalle").textContent="Abre el "+fechaLarga(meta.openAt)+" y cierra el "+fechaLarga(meta.closeAt)+". Por ahora solo consulta.";
+    $("vDetalle").textContent="Abre el "+fechaLarga(M("openAt"))+" y cierra el "+fechaLarga(M("closeAt"))+". Por ahora solo consulta.";
     $("vDias").classList.remove("hidden");
     $("vDiasN").textContent=String(v.dias);
     $("vDiasT").textContent=v.dias===1?"día para abrir":"días para abrir";
   } else {
     el.classList.add("cerrada");
     $("vEstado").textContent="Ventana cerrada";
-    $("vDetalle").textContent="Cerró el "+fechaLarga(meta.closeAt)+". La información quedó en solo lectura.";
+    $("vDetalle").textContent="Cerró el "+fechaLarga(M("closeAt"))+". La información quedó en solo lectura.";
   }
   if(isAdmin && override && !v.editable){
     $("vDetalle").textContent += "  ·  Edición habilitada para ti como administrador.";
@@ -605,7 +664,7 @@ function rowsOf(){
 function fillRegiones(){
   const set=new Set();
   if(level==="si"){ if(siBase) siBase.clientes.forEach(c=>set.add(c.rg)); }
-  else for(const lv of ["reg","cli"])
+  else if(base) for(const lv of ["reg","cli"])
     for(const k in base[lv].cells) set.add(k.split(SEP)[1]);
   const arr=[...set].filter(Boolean).sort((a,b)=>a.localeCompare(b,"es"));
   const sel=$("filtro"), prev=sel.value;
@@ -616,8 +675,8 @@ function fillRegiones(){
 
 /* ---------- render ---------- */
 function draw(){
-  if(!base) return;
   if(level==="si"){ drawSI(); return; }
+  if(!base) return;
   $("siResSec").classList.add("hidden");
   $("validador").parentElement.classList.remove("hidden");
   $("kTonsL").textContent="TONS ingresadas"; $("kIVL").textContent="Valorizado S/";
@@ -867,77 +926,75 @@ async function loadSI(){
   const d=await getDoc(doc(dbF,"cfg","si"));
   return d.exists() ? prepSI(d.data()) : null;
 }
+const fS=n=>(n??0).toLocaleString("es-PE",{minimumFractionDigits:0,maximumFractionDigits:2});
 function filasSI(){
   const ed={...saved.si,...local.si};
   let arr=siBase.clientes.map(c=>{
     const aj = c.cod in ed ? ed[c.cod] : c.tot;
     const ajc={}; siBase.cats.forEach(k=>ajc[k]= c.tot ? aj*(c.p[k]||0)/c.tot : 0);
-    return {...c, aj, ajc, dif:aj-c.tot, sinMix: !c.tot && aj!==0};
+    return {...c, aj, ajc, sinMix: !c.tot && aj!==0};
   });
-  arr.sort((a,b)=>{const d=scIdx(a.sc)-scIdx(b.sc); if(d) return d;
-    return a.rg.localeCompare(b.rg,"es") || a.ds.localeCompare(b.ds,"es");});
+  arr.sort((a,b)=>{const d=scIdxSI(a.sc)-scIdxSI(b.sc); if(d) return d;
+    return a.sc.localeCompare(b.sc,"es") || a.rg.localeCompare(b.rg,"es") || a.ds.localeCompare(b.ds,"es");});
   return arr;
 }
 function drawSI(){
   ["refSec","resSec"].forEach(x=>$(x).classList.add("hidden"));
   $("validador").parentElement.classList.add("hidden");
-  $("kTonsL").textContent="Propuesta S/"; $("kIVL").textContent="Ajustado S/";
-  $("kDifL").textContent="Diferencia vs propuesta";
-  $("cDif").classList.remove("off","good");
-  $("levelNote").textContent="Escribe el total en soles por cliente; también puedes pegar una columna desde Excel. "+
+  $("kTonsL").textContent="Total ingresado S/"; $("kIVL").textContent="Clientes";
+  $("kDifL").textContent="Sin mix por categoría";
+  $("levelNote").textContent="Escribe el total en soles de cada cliente; también puedes pegar una columna desde Excel. "+
     "Se abre por categoría con el mix de la propuesta. Las toneladas, el NR y el GR se recalculan en el proceso.";
   if(!siBase){
-    $("grid").innerHTML='<p class="note" style="padding:14px">Todavía no hay una propuesta de sell in publicada.</p>';
+    $("grid").innerHTML='<p class="note" style="padding:14px">Todavía no hay una propuesta de sell in publicada. Avisa a Sales Operations.</p>';
     $("siResSec").classList.add("hidden");
     ["kTons","kIV","kDif"].forEach(x=>$(x).textContent="—"); pintaVentana(); return;
   }
   const editable=puedeEditar(), dis=editable?"":" disabled", cats=siBase.cats;
-  let todas=filasSI(), rws=filtro ? todas.filter(r=>r.rg===filtro) : todas;
+  const todas=filasSI(), rws=filtro ? todas.filter(r=>r.rg===filtro) : todas;
   lastSIRows=rws;
-  let h='<table><thead><tr class="g"><th class="k" colspan="4"></th>'+
-    '<th colspan="'+(cats.length+1)+'">Propuesta S/</th><th class="edit">Tu ajuste</th>'+
-    '<th class="sub" colspan="'+cats.length+'">Ajustado por categoría S/</th><th class="sub" colspan="2">Variación</th></tr>'+
-    '<tr class="c"><th class="k">Subcanal</th><th class="k">Región</th><th class="k">Código</th><th class="k">Distribuidor</th>';
-  cats.forEach(c=>h+='<th>'+esc(c)+'</th>'); h+='<th>Total</th><th class="edit">Total S/</th>';
+  let h='<table><thead><tr class="g"><th class="k" colspan="4"></th><th class="edit">Cuota oficial</th>'+
+    '<th class="sub" colspan="'+cats.length+'">Por categoría S/ (mix de la propuesta)</th></tr>'+
+    '<tr class="c"><th class="k">Subcanal</th><th class="k">Región</th><th class="k">Código</th><th class="k">Distribuidor</th>'+
+    '<th class="edit">Total S/</th>';
   cats.forEach((c,i)=>h+='<th'+(i===0?' class="sub"':'')+'>'+esc(c)+'</th>');
-  h+='<th class="sub">S/</th><th>%</th></tr></thead><tbody>';
-  const tp={}, ta={}; cats.forEach(c=>{tp[c]=0; ta[c]=0;}); let gp=0, ga=0;
+  h+='</tr></thead><tbody>';
+  const ta={}; cats.forEach(c=>ta[c]=0); let ga=0, sinMix=0;
   rws.forEach((r,ri)=>{
     h+='<tr><td class="k">'+esc(r.sc)+'</td><td class="k">'+esc(r.rg)+'</td><td class="k">'+esc(r.cod)+
-       '</td><td class="k">'+esc(r.ds)+'</td>';
-    cats.forEach(c=>{ h+='<td>'+fK(r.p[c]||0)+'</td>'; tp[c]+=r.p[c]||0; });
-    h+='<td>'+fK(r.tot)+'</td><td class="edit"><input class="c wide'+(r.cod in local.si?" dirty":"")+
-       '" data-k="'+esc(r.cod)+'" data-r="'+ri+'" data-c="0" value="'+r.aj.toFixed(2)+'" inputmode="decimal"'+dis+'></td>';
-    cats.forEach((c,i)=>{ h+='<td'+(i===0?' class="sub"':'')+'>'+(r.sinMix?'<span title="Sin mix en la propuesta">—</span>':fK(r.ajc[c]))+'</td>'; ta[c]+=r.ajc[c]; });
-    const cls=Math.abs(r.dif)<0.5?"":(r.dif>0?"up":"down");
-    h+='<td class="sub '+cls+'">'+(Math.abs(r.dif)<0.5?"—":fK(r.dif))+'</td><td class="'+cls+'">'+
-       (Math.abs(r.dif)<0.5||!r.tot?"—":(100*r.dif/r.tot).toFixed(1)+"%")+'</td></tr>';
-    gp+=r.tot; ga+=r.aj;
+       '</td><td class="k">'+esc(r.ds)+'</td><td class="edit"><input class="c wide'+(r.cod in local.si?" dirty":"")+
+       '" data-k="'+esc(r.cod)+'" data-r="'+ri+'" data-c="0" value="'+fS(r.aj)+'" inputmode="decimal"'+dis+'></td>';
+    cats.forEach((c,i)=>{ h+='<td'+(i===0?' class="sub"':'')+'>'+
+      (r.sinMix?'<span title="El cliente no tiene mix en la propuesta">—</span>':fS(Math.round(r.ajc[c])))+'</td>';
+      ta[c]+=r.ajc[c]; });
+    h+='</tr>'; ga+=r.aj; if(r.sinMix) sinMix++;
   });
-  h+='</tbody><tfoot><tr><td class="k" colspan="4">Total</td>';
-  cats.forEach(c=>h+='<td>'+fK(tp[c])+'</td>'); h+='<td>'+fK(gp)+'</td><td class="edit">'+fK(ga)+'</td>';
-  cats.forEach((c,i)=>h+='<td'+(i===0?' class="sub"':'')+'>'+fK(ta[c])+'</td>');
-  const gd=ga-gp;
-  h+='<td class="sub">'+fK(gd)+'</td><td>'+(gp?(100*gd/gp).toFixed(1)+"%":"—")+'</td></tr></tfoot></table>';
+  h+='</tbody><tfoot><tr><td class="k" colspan="4">Total</td><td class="edit">'+fS(ga)+'</td>';
+  cats.forEach((c,i)=>h+='<td'+(i===0?' class="sub"':'')+'>'+fS(Math.round(ta[c]))+'</td>');
+  h+='</tr></tfoot></table>';
   $("grid").innerHTML=h;
   $("filtroInfo").textContent = filtro ? rws.length+" clientes en "+filtro : rws.length+" clientes";
 
-  /* resumen por subcanal y región, siempre de todo el país */
+  /* resumen por subcanal y región, de todo el país */
   const res=new Map();
   for(const r of todas){ const k=r.sc+SEP+r.rg;
-    if(!res.has(k)) res.set(k,{sc:r.sc,rg:r.rg,p:0,a:0}); const o=res.get(k); o.p+=r.tot; o.a+=r.aj; }
-  let q='<table><thead><tr><th class="k">Subcanal</th><th class="k">Región</th><th>Propuesta S/</th>'+
-    '<th>Ajustado S/</th><th>Diferencia</th><th>%</th></tr></thead><tbody>';
-  let tP=0, tA=0;
-  for(const o of res.values()){ tP+=o.p; tA+=o.a; const d=o.a-o.p, cls=Math.abs(d)<0.5?"":(d>0?"up":"down");
-    q+='<tr><td class="k">'+esc(o.sc)+'</td><td class="k">'+esc(o.rg)+'</td><td>'+f0(o.p)+'</td><td>'+f0(o.a)+
-       '</td><td class="'+cls+'">'+f0(d)+'</td><td class="'+cls+'">'+(o.p?(100*d/o.p).toFixed(1)+"%":"—")+'</td></tr>'; }
-  q+='</tbody><tfoot><tr><td class="k" colspan="2">Total</td><td>'+f0(tP)+'</td><td>'+f0(tA)+'</td><td>'+
-     f0(tA-tP)+'</td><td>'+(tP?(100*(tA-tP)/tP).toFixed(1)+"%":"—")+'</td></tr></tfoot></table>';
+    if(!res.has(k)){ const o={sc:r.sc,rg:r.rg,t:0}; cats.forEach(c=>o[c]=0); res.set(k,o); }
+    const o=res.get(k); o.t+=r.aj; cats.forEach(c=>o[c]+=r.ajc[c]); }
+  let q='<table><thead><tr><th class="k">Subcanal</th><th class="k">Región</th>';
+  cats.forEach(c=>q+='<th>'+esc(c)+'</th>'); q+='<th>Total S/</th></tr></thead><tbody>';
+  const tq={}; cats.forEach(c=>tq[c]=0); let tt=0;
+  for(const o of res.values()){ tt+=o.t;
+    q+='<tr><td class="k">'+esc(o.sc)+'</td><td class="k">'+esc(o.rg)+'</td>';
+    cats.forEach(c=>{ q+='<td>'+f0(o[c])+'</td>'; tq[c]+=o[c]; });
+    q+='<td>'+f0(o.t)+'</td></tr>'; }
+  q+='</tbody><tfoot><tr><td class="k" colspan="2">Total</td>';
+  cats.forEach(c=>q+='<td>'+f0(tq[c])+'</td>'); q+='<td>'+f0(tt)+'</td></tr></tfoot></table>';
   $("siResumen").innerHTML=q; $("siResSec").classList.remove("hidden");
 
-  $("kTons").textContent="S/ "+fK(gp); $("kIV").textContent="S/ "+fK(ga);
-  $("kDif").textContent=(gd>=0?"+":"")+fK(gd);
+  $("kTons").textContent="S/ "+fK(ga); $("kIV").textContent=String(todas.length);
+  const sm=todas.filter(r=>r.sinMix).length;
+  $("kDif").textContent=String(sm);
+  $("cDif").classList.toggle("off",sm>0); $("cDif").classList.toggle("good",sm===0);
   const pend=pendientes();
   $("kPend").textContent=String(pend);
   $("save").disabled = pend===0 || !me || !editable;
@@ -947,11 +1004,9 @@ function drawSI(){
 }
 function exportSI(){
   const cats=siBase.cats;
-  csvDump("sell_in_por_cliente.csv",
-    ["SUBCANAL","REGION","CUSTOMER CODE","DISTRIBUIDOR",...cats.map(c=>"PROPUESTA "+c),"PROPUESTA TOTAL",
-     "AJUSTE TOTAL",...cats.map(c=>"AJUSTADO "+c),"DIFERENCIA"],
-    lastSIRows.map(r=>[r.sc,r.rg,r.cod,r.ds,...cats.map(c=>(r.p[c]||0).toFixed(2)),r.tot.toFixed(2),
-      r.aj.toFixed(2),...cats.map(c=>r.ajc[c].toFixed(2)),r.dif.toFixed(2)]));
+  csvDump("sell_in_oficial_por_cliente.csv",
+    ["SUBCANAL","REGION","CUSTOMER CODE","DISTRIBUIDOR","TOTAL S/",...cats],
+    lastSIRows.map(r=>[r.sc,r.rg,r.cod,r.ds,r.aj.toFixed(2),...cats.map(c=>r.ajc[c].toFixed(2))]));
 }
 
 /* ---------- exportar ---------- */
@@ -1048,7 +1103,7 @@ function info(){
     : "Sin ajustes guardados.";
 }
 async function save(){
-  if(!puedeEditar()){ alert("La ventana de registro está cerrada."); return; }
+  if(!puedeEditar()){ alert("La ventana de registro de "+nombreModulo()+" está cerrada."); return; }
   const btn=$("save"); btn.disabled=true; btn.textContent="Guardando…";
   try{
     const ref=doc(dbF,"ajustes","actual");
@@ -1080,11 +1135,12 @@ $("filtro").addEventListener("change",e=>{ filtro=e.target.value; draw(); });
 $("expGrid").onclick=()=>level==="si" ? (siBase && exportSI()) : exportGrid();
 $("expSIRes").onclick=()=>{
   if(!siBase) return;
-  const res=new Map();
-  for(const r of filasSI()){ const k=r.sc+SEP+r.rg; if(!res.has(k)) res.set(k,[r.sc,r.rg,0,0]);
-    const o=res.get(k); o[2]+=r.tot; o[3]+=r.aj; }
-  csvDump("sell_in_subcanal_region.csv",["SUBCANAL","REGION","PROPUESTA S/","AJUSTADO S/","DIFERENCIA"],
-    [...res.values()].map(o=>[o[0],o[1],o[2].toFixed(2),o[3].toFixed(2),(o[3]-o[2]).toFixed(2)]));
+  const cats=siBase.cats, res=new Map();
+  for(const r of filasSI()){ const k=r.sc+SEP+r.rg;
+    if(!res.has(k)) res.set(k,{sc:r.sc,rg:r.rg,t:0,...Object.fromEntries(cats.map(c=>[c,0]))});
+    const o=res.get(k); o.t+=r.aj; cats.forEach(c=>o[c]+=r.ajc[c]); }
+  csvDump("sell_in_subcanal_region.csv",["SUBCANAL","REGION",...cats,"TOTAL S/"],
+    [...res.values()].map(o=>[o.sc,o.rg,...cats.map(c=>o[c].toFixed(2)),o.t.toFixed(2)]));
 };
 $("expRef").onclick=exportRef;
 $("expRes").onclick=exportResumen;
@@ -1092,25 +1148,25 @@ $("toggleAdmin").onclick=()=>$("adminBox").classList.toggle("hidden");
 $("override").addEventListener("change",e=>{ override=e.target.checked; draw(); });
 
 function pintaEmg(){
-  const on = !!(meta && meta.emgOn);
+  const on = !!M("emgOn");
   $("emgBox").classList.toggle("on",on);
   $("emgOn").classList.toggle("hidden",on);
   $("emgOff").classList.toggle("hidden",!on);
   $("emgInfo").textContent = on
-    ? "Activa desde el "+(meta.emgAt?new Date(meta.emgAt).toLocaleString("es-PE"):"—")+
-      (meta.emgBy?" · "+meta.emgBy:"")
+    ? "Activa desde el "+(M("emgAt")?new Date(M("emgAt")).toLocaleString("es-PE"):"—")+
+      (M("emgBy")?" · "+M("emgBy"):"")
     : "Apagada. Rige la ventana de fechas.";
 }
 $("emgOn").onclick=async()=>{
-  if(!confirm("Se habilitará la edición para todos los gerentes aunque la ventana esté cerrada. ¿Continuar?")) return;
+  if(!confirm("Se habilitará la edición de "+nombreModulo()+" para todos los gerentes aunque la ventana esté cerrada. ¿Continuar?")) return;
   try{
-    await mergeMeta({emgOn:true, emgBy:me, emgAt:new Date().toISOString()});
+    await mergeMeta({[campo("emgOn")]:true, [campo("emgBy")]:me, [campo("emgAt")]:new Date().toISOString()});
     pintaEmg(); draw();
   }catch(e){ alert("No se pudo activar: "+(e.message||e)); }
 };
 $("emgOff").onclick=async()=>{
   try{
-    await mergeMeta({emgOn:false});
+    await mergeMeta({[campo("emgOn")]:false});
     pintaEmg(); draw();
   }catch(e){ alert("No se pudo apagar: "+(e.message||e)); }
 };
@@ -1120,7 +1176,7 @@ $("saveFechas").onclick=async()=>{
   if(!o||!c){ m.className="msg err"; m.textContent="Define las dos fechas."; return; }
   if(c<o){ m.className="msg err"; m.textContent="El cierre no puede ser anterior a la apertura."; return; }
   try{
-    await mergeMeta({openAt:o, closeAt:c});
+    await mergeMeta({[campo("openAt")]:o, [campo("closeAt")]:c});
     m.className="msg ok";
     m.textContent="Ventana guardada: "+fechaLarga(o)+" a "+fechaLarga(c)+".";
     draw();
@@ -1172,13 +1228,15 @@ $("pub").onclick=async()=>{
       " format flavors. Revisa que la ventana de registro esté definida para este mes.";
     $("prog").classList.add("hidden");
     $("raw").value=""; $("csv").value="";
-    base=await loadBase(); showApp(); fillRegiones(); draw();
+    base=await loadBase(); abrirModulo("so");
   }catch(e){ $("prog").classList.add("hidden");
     m.className="msg err"; m.textContent=(e&&e.message)||String(e); }
 };
 $("wipe").onclick=async()=>{
-  if(!confirm("Se borran todos los ajustes guardados por los gerentes. ¿Continuar?")) return;
-  await setDoc(doc(dbF,"ajustes","actual"),{reg:{},cli:{},si:{},by:me,at:new Date().toISOString()});
+  if(!confirm("Se borran todos los ajustes de "+nombreModulo()+" guardados por los gerentes. ¿Continuar?")) return;
+  const ref=doc(dbF,"ajustes","actual"), cur=(await getDoc(ref)).data()||{};
+  const limpio = modulo==="si" ? {si:{}} : {reg:{},cli:{}};
+  await setDoc(ref,{reg:{},cli:{},si:{},...cur,...limpio,by:me,at:new Date().toISOString()});
 };
 $("exp").onclick=()=>{
   const data=[];
@@ -1203,6 +1261,7 @@ $("pubSI").onclick=async()=>{
       rd.readAsText(f,"UTF-8");});
     const d=buildSI(txt);
     await setDoc(doc(dbF,"cfg","si"),{...d, at:new Date().toISOString(), by:me});
+    await mergeMeta({siEmgOn:false});
     siBase=prepSI(d);
     const tot=d.clientes.reduce((a,c)=>a+c.tot,0);
     m.className="msg ok";
@@ -1217,9 +1276,14 @@ function cerrarSesion(){
   me=""; isAdmin=false; override=false; base=null;
   location.reload();
 }
+let accionModal="salir";
+$("inicio").onclick=()=>{ if(pendientes()===0){ verPortal(); return; } accionModal="inicio"; abrirModal(); };
 $("salir").onclick=()=>{
+  if(pendientes()===0){ cerrarSesion(); return; }
+  accionModal="salir"; abrirModal();
+};
+function abrirModal(){
   const n=pendientes();
-  if(n===0){ cerrarSesion(); return; }
   $("mMsg").textContent="";
   $("mTit").textContent = n===1 ? "Tienes 1 cambio sin guardar"
                                 : "Tienes "+n+" cambios sin guardar";
@@ -1227,20 +1291,28 @@ $("salir").onclick=()=>{
     ? "Si sales sin guardar, esos ajustes se pierden y nadie más los verá."
     : "La ventana de registro está cerrada, así que ya no se pueden guardar. Al salir se pierden.";
   $("mGuardar").classList.toggle("hidden", !puedeEditar());
+  $("mGuardar").textContent = accionModal==="inicio" ? "Guardar y volver" : "Guardar y salir";
+  $("mDescartar").textContent = accionModal==="inicio" ? "Volver sin guardar" : "Salir sin guardar";
   $("modal").classList.remove("hidden");
-};
+}
+function terminarAccion(){
+  if(accionModal==="inicio"){ local={reg:{},cli:{},si:{}}; $("modal").classList.add("hidden"); verPortal(); }
+  else cerrarSesion();
+}
 $("mCancelar").onclick=()=>$("modal").classList.add("hidden");
-$("mDescartar").onclick=()=>{ $("modal").classList.add("hidden"); cerrarSesion(); };
+$("mDescartar").onclick=()=>{ $("modal").classList.add("hidden"); terminarAccion(); };
 $("mGuardar").onclick=async()=>{
   const m=$("mMsg"); m.className="msg"; m.textContent="Guardando…";
   $("mGuardar").disabled=true; $("mDescartar").disabled=true;
   try{
     const ref=doc(dbF,"ajustes","actual");
     const cur=(await getDoc(ref)).data()||{reg:{},cli:{}};
-    await setDoc(ref,{reg:{...(cur.reg||{}),...local.reg},cli:{...(cur.cli||{}),...local.cli},
-      si:{...(cur.si||{}),...local.si}, by:me, at:new Date().toISOString()});
+    const merged={reg:{...(cur.reg||{}),...local.reg},cli:{...(cur.cli||{}),...local.cli},
+      si:{...(cur.si||{}),...local.si}, by:me, at:new Date().toISOString()};
+    await setDoc(ref,merged); saved=merged;
     local={reg:{},cli:{},si:{}};
-    cerrarSesion();
+    $("mGuardar").disabled=false; $("mDescartar").disabled=false;
+    terminarAccion();
   }catch(e){
     m.className="msg err"; m.textContent="No se pudo guardar: "+(e&&e.message||e)+". Puedes reintentar o salir sin guardar.";
     $("mGuardar").disabled=false; $("mDescartar").disabled=false;
@@ -1255,6 +1327,62 @@ window.addEventListener("beforeunload",e=>{
   if(pendientes()>0){e.preventDefault();e.returnValue="";}
 });
 
+const nombreModulo=()=>modulo==="si" ? "sell in" : "sell out";
+function pintaPortal(){
+  let h="";
+  for(const p of PAISES){
+    if(!p.modulos.length){
+      h+='<div class="pais prox"><h3>'+esc(p.nombre)+'</h3><p class="canal">'+esc(p.canal)+'</p>'+
+         '<p class="note">Próximamente</p></div>'; continue;
+    }
+    h+='<div class="pais"><h3>'+esc(p.nombre)+'</h3><p class="canal">'+esc(p.canal)+'</p>';
+    for(const m of p.modulos){
+      let est="";
+      if(meta && me){ const v=ventana(m.id);
+        est = v.estado==="abierta"||v.estado==="forzada" ? '<em class="estado abierta">abierta</em>'
+            : v.estado==="cerrada" ? '<em class="estado cerrada">cerrada</em>'
+            : v.estado==="pronto" ? '<em class="estado pronto">abre pronto</em>' : ""; }
+      h+='<button class="mod" data-p="'+p.cod+'" data-m="'+m.id+'">'+est+'<b>'+esc(m.nombre)+'</b><span>'+
+         esc(m.desc)+'</span></button>';
+    }
+    h+='</div>';
+  }
+  $("pPaises").innerHTML=h;
+  $("pWho").textContent = me ? "Sesión: "+me+(isAdmin?" · administrador":"") : "";
+  $("pSalir").classList.toggle("hidden",!me);
+  document.querySelectorAll(".mod").forEach(b=>b.onclick=()=>irA(b.dataset.p,b.dataset.m));
+}
+function verPortal(){
+  ["gate","app","foot"].forEach(x=>$(x).classList.add("hidden"));
+  $("portal").classList.remove("hidden");
+  pintaPortal();
+}
+function irA(pc,mod){
+  pais=PAISES.find(p=>p.cod===pc); destino=mod;
+  if(!me){
+    $("portal").classList.add("hidden"); $("gate").classList.remove("hidden");
+    $("gTag").textContent="Cuotas "+pais.nombre+" · "+pais.modulos.find(m=>m.id===mod).nombre;
+    return;
+  }
+  abrirModulo(mod);
+}
+function abrirModulo(mod){
+  modulo=mod; filtro="";
+  level = mod==="si" ? "si" : "cli";
+  const m=pais.modulos.find(x=>x.id===mod);
+  $("portal").classList.add("hidden"); $("gate").classList.add("hidden");
+  $("hTit").textContent="Cuotas "+m.nombre+" — "+pais.canal+" "+pais.nombre;
+  $("hSub").textContent = mod==="si" ? "Total en soles por cliente" : "Toneladas y valorización en soles";
+  $("tCli").classList.toggle("hidden",mod==="si"); $("tReg").classList.toggle("hidden",mod==="si");
+  $("tSI").classList.toggle("hidden",mod!=="si");
+  $("tCli").setAttribute("aria-selected","true"); $("tReg").setAttribute("aria-selected","false");
+  $("admSO").classList.toggle("hidden",mod==="si"); $("admSI").classList.toggle("hidden",mod!=="si");
+  $("vTitAdm").textContent="Ventana de registro — "+m.nombre;
+  $("footTxt").innerHTML = mod==="si"
+    ? "El <strong>total por cliente</strong> es la cuota oficial de sell in. Se abre por categoría con el mix de la propuesta; las toneladas, el NR y el GR se recalculan en el proceso"
+    : "El <strong>split por cliente</strong> es el que tiene validez para la cuota. El <strong>split regional</strong> es solo referencial: sirve de guía para repartir por categoría y no alimenta la cuota oficial";
+  showApp(); fillRegiones(); draw();
+}
 function showApp(){
   $("gate").classList.add("hidden");
   $("app").classList.remove("hidden");
@@ -1263,14 +1391,29 @@ function showApp(){
   $("whoAmI").textContent = me + (isAdmin ? " · administrador" : "");
   if(isAdmin){
     $("toggleAdmin").classList.remove("hidden");
-    if(meta && meta.openAt) $("dOpen").value=meta.openAt;
-    if(meta && meta.closeAt) $("dClose").value=meta.closeAt;
+    $("dOpen").value=M("openAt")||""; $("dClose").value=M("closeAt")||"";
     pintaEmg();
   }
   pintaVentana();
 }
 
 /* ---------- arranque ---------- */
+let suscrito=false;
+function suscribir(){
+  if(suscrito) return; suscrito=true;
+  onSnapshot(doc(dbF,"ajustes","actual"), snap=>{
+    const d=snap.exists()?snap.data():null;
+    saved = d?{reg:d.reg||{},cli:d.cli||{},si:d.si||{},by:d.by||"",at:d.at||""}:{reg:{},cli:{},si:{},by:"",at:""};
+    info(); if(!$("app").classList.contains("hidden")) draw();
+  }, ()=>banner("Se perdió la conexión con los datos compartidos. Recarga la página."));
+  onSnapshot(doc(dbF,"cfg","meta"), snap=>{
+    if(snap.exists()){ meta=snap.data();
+      if(!$("app").classList.contains("hidden")){ pintaVentana(); if(isAdmin) pintaEmg(); draw(); }
+      else pintaPortal(); }
+  }, ()=>{});
+}
+$("gVolver").onclick=verPortal;
+$("pSalir").onclick=()=>{ if(pendientes()===0){ cerrarSesion(); return; } accionModal="salir"; abrirModal(); };
 $("gGo").onclick=async()=>{
   const m=$("gMsg"); m.className="msg";
   const nm=$("gName").value.trim(), kv=$("gKey").value;
@@ -1280,27 +1423,19 @@ $("gGo").onclick=async()=>{
   else if(h!==meta.keyU){ m.className="msg err"; m.textContent="Clave incorrecta."; return; }
   me=nm;
   base=await loadBase();
-  if(!base){
-    if(isAdmin){ $("gate").classList.add("hidden"); $("app").classList.remove("hidden");
-      $("whoAmI").textContent=me+" · administrador";
-      $("toggleAdmin").classList.remove("hidden"); $("adminBox").classList.remove("hidden");
-      if(meta.openAt) $("dOpen").value=meta.openAt;
-      if(meta.closeAt) $("dClose").value=meta.closeAt;
-      pintaEmg();
-    } else { m.className="msg err"; m.textContent="Todavía no hay una base publicada. Avisa a Sales Operations."; }
+  try{ siBase=await loadSI(); }catch(e){ siBase=null; }
+  suscribir();
+  if(!base && destino==="si"){
+    abrirModulo("si");
+    if(isAdmin) $("adminBox").classList.remove("hidden");
     return;
   }
-  try{ siBase=await loadSI(); }catch(e){ siBase=null; }
-  showApp(); fillRegiones();
-  onSnapshot(doc(dbF,"ajustes","actual"), snap=>{
-    const d=snap.exists()?snap.data():null;
-    saved = d?{reg:d.reg||{},cli:d.cli||{},si:d.si||{},by:d.by||"",at:d.at||""}:{reg:{},cli:{},si:{},by:"",at:""};
-    info(); draw();
-  }, ()=>banner("Se perdió la conexión con los datos compartidos. Recarga la página."));
-  onSnapshot(doc(dbF,"cfg","meta"), snap=>{
-    if(snap.exists()){ meta=snap.data(); pintaVentana();
-      if(isAdmin) pintaEmg(); if(base) draw(); }
-  }, ()=>{});
+  if(!base){
+    if(isAdmin){ abrirModulo("so"); $("adminBox").classList.remove("hidden"); }
+    else { m.className="msg err"; m.textContent="Todavía no hay una base publicada. Avisa a Sales Operations."; }
+    return;
+  }
+  abrirModulo(destino||"so");
   info(); draw();
 };
 $("sGo").onclick=async()=>{
@@ -1315,6 +1450,7 @@ $("sGo").onclick=async()=>{
 
 (async()=>{
   const m=$("gMsg");
+  pintaPortal();
   try{
     const app=initializeApp(firebaseConfig);
     dbF=getFirestore(app);
@@ -1326,7 +1462,7 @@ $("sGo").onclick=async()=>{
   }
   try{
     const d=await getDoc(doc(dbF,"cfg","meta"));
-    if(d.exists() && d.data().keyU){ meta=d.data(); }
+    if(d.exists() && d.data().keyU){ meta=d.data(); pintaPortal(); }
     else { $("gateBody").classList.add("hidden"); $("gateSetup").classList.remove("hidden"); }
   }catch(e){
     m.className="msg err"; m.textContent="No se pudo leer la configuración: "+(e.message||e);
