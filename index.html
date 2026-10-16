@@ -560,6 +560,13 @@ function build(text){
       t, iv:num(v[ix.IV_POR_TON_SKU]), ibp:num(v[ix["RAW_IBP_FF_TONS"]])});
   }
   if(!raw.length) throw new Error("Ninguna fila tiene CUOTA TONS SO.");
+  // Filas que no entran en ninguna columna de la web: no se muestran ni se suman
+  const fuera={n:0,t:0,v:0,ej:[]};
+  raw.forEach(r=>{
+    if(CATS.includes(r.ct) && SUBS.includes(r.sb)) return;
+    fuera.n++; fuera.t+=r.t; fuera.v+=r.t*r.iv;
+    if(fuera.ej.length<5) fuera.ej.push(r.ds+" · "+r.ff+" ("+(r.ct||"sin categoría")+", "+(r.sb||"sin LET/MAY")+")");
+  });
   const ibp={}; raw.forEach(r=>{ if(!(r.ff in ibp)) ibp[r.ff]=r.ibp; });
   const mk=keyf=>{
     const tot={}; raw.forEach(r=>{const k=keyf(r); tot[k]=(tot[k]||0)+r.t;});
@@ -576,7 +583,7 @@ function build(text){
     }
     return {tot,byKey};
   };
-  return {ibp,
+  return {ibp, fuera,
     reg:mk(r=>[r.sc,r.rg,r.ct,r.sb].join(SEP)),
     cli:mk(r=>[r.sc,r.rg,r.ds,r.ct,r.sb].join(SEP))};
 }
@@ -1215,6 +1222,15 @@ $("pub").onclick=async()=>{
   $("prog").classList.remove("hidden"); $("prog").textContent="Procesando…";
   try{
     const b=build($("raw").value);
+    if(b.fuera.n>0){
+      const txt=b.fuera.n+" filas del archivo no tienen categoría o LET/MAY: no se van a mostrar ni sumar en la web.\n\n"+
+        "Suman "+f1(b.fuera.t)+" t y S/ "+f0(b.fuera.v)+".\n\nEjemplos:\n· "+b.fuera.ej.join("\n· ")+
+        "\n\nLo correcto es completar su categoría (Maestro Andino) y volver a generar el archivo.\n\n¿Publicar de todas formas?";
+      if(!confirm(txt)){
+        m.className="msg"; m.textContent="Publicación cancelada: "+b.fuera.n+" filas sin categoría o LET/MAY (S/ "+f0(b.fuera.v)+").";
+        $("prog").classList.add("hidden"); return;
+      }
+    }
     const cr=chunkify(b.reg), cc=chunkify(b.cli);
     await setDoc(doc(dbF,"cfg","ibp"),{map:b.ibp});
     await writePart("basereg",cr,"Split regional");
@@ -1225,7 +1241,8 @@ $("pub").onclick=async()=>{
     m.className="msg ok";
     m.textContent="Base publicada: "+Object.keys(b.reg.tot).length+" celdas región, "+
       Object.keys(b.cli.tot).length+" celdas cliente, "+Object.keys(b.ibp).length+
-      " format flavors. Revisa que la ventana de registro esté definida para este mes.";
+      " format flavors. Revisa que la ventana de registro esté definida para este mes."+
+      (b.fuera.n>0?" Atención: "+b.fuera.n+" filas sin categoría o LET/MAY no se muestran (S/ "+f0(b.fuera.v)+").":"");
     $("prog").classList.add("hidden");
     $("raw").value=""; $("csv").value="";
     base=await loadBase(); abrirModulo("so");
