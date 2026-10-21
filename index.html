@@ -609,31 +609,32 @@ function computeFor(lvl){
   }
   const fac={};
   for(const ff in base.ibp) fac[ff] = !sumFF[ff] ? 1 : base.ibp[ff]/sumFF[ff];
-  const tons={}, iv={};
+  const tons={}, iv={}, raw={};
   for(const k in b.cells){
     const mgr = k in ed ? ed[k] : b.tot[k];
     const a=b.cells[k]; let t=0,v=0;
     for(let i=0;i<a.length;i+=3){ const f=fac[a[i]]??1; t+=mgr*a[i+1]*f; v+=mgr*a[i+2]*f; }
-    tons[k]=t; iv[k]=v;
+    tons[k]=t; iv[k]=v; raw[k]=mgr;          // raw: lo que se escribió en la celda, sin el cierre contra el IBP
   }
-  return {tons,iv,ed};
+  return {tons,iv,ed,raw};
 }
 const compute=()=>computeFor(level);
 
-/* Referencia: lo que el split regional asignó por región y categoría,
-   contra lo que hoy suma el split por cliente. */
+/* Referencia: lo que el split regional asignó por región y categoría, tal como se escribió,
+   contra lo que hoy suma lo escrito en el split por cliente. Sin el cierre contra el IBP, que
+   mueve los números y haría que el objetivo no coincida con lo que el gerente asignó. */
 function referencia(){
   const R=computeFor("reg"), C=computeFor("cli");
   const reg={}, cli={}, regiones=new Set();
   for(const k in base.reg.cells){
     const p=k.split(SEP), kk=p[1]+SEP+p[2];
     regiones.add(p[1]);
-    reg[kk]=(reg[kk]||0)+(R.tons[k]||0);
+    reg[kk]=(reg[kk]||0)+(R.raw[k]||0);
   }
   for(const k in base.cli.cells){
     const p=k.split(SEP), kk=p[1]+SEP+p[3];
     regiones.add(p[1]);
-    cli[kk]=(cli[kk]||0)+(C.tons[k]||0);
+    cli[kk]=(cli[kk]||0)+(C.raw[k]||0);
   }
   const out=[];
   for(const rg of [...regiones].sort((a,b)=>a.localeCompare(b,"es")))
@@ -793,7 +794,7 @@ function draw(){
   g+=celdaRef({regional:ta, cliente:tb, dif:tb-ta}).replace('class="rc','class="rc tot');
   g+='</tr></tfoot></table>'+
      '<div class="leyenda">'+
-     '<span>Objetivo: lo que asignaste en el split regional por región y categoría.</span>'+
+     '<span>Objetivo: lo que asignaste en el split regional por región y categoría, tal como lo escribiste.</span>'+
      '<span><i style="background:var(--warn-rule)"></i>Falta repartir</span>'+
      '<span><i style="background:var(--bad)"></i>Repartiste de más</span>'+
      '</div>';
