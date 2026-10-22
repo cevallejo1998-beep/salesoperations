@@ -1257,18 +1257,26 @@ $("wipe").onclick=async()=>{
   await setDoc(ref,{reg:{},cli:{},si:{},...cur,...limpio,by:me,at:new Date().toISOString()});
 };
 $("exp").onclick=()=>{
-  const data=[];
+  // Solo los ajustes de celdas que existen en la base publicada hoy. Los guardados con una
+  // base anterior (por ejemplo, un cliente que cambió de región) se omiten y se avisa.
+  const data=[], omit={reg:0,cli:0,si:0};
   for(const lv of ["reg","cli"]) for(const k in saved[lv]){
+    if(!(base && base[lv] && k in base[lv].tot)){ omit[lv]++; continue; }
     const p=k.split(SEP);
     data.push(lv==="reg"?["REGION",p[0],p[1],"",p[2],p[3],saved.reg[k],"",""]
                         :["CLIENTE",p[0],p[1],p[2],p[3],p[4],saved.cli[k],"",""]);
   }
   for(const cod in (saved.si||{})){
     const c=siBase && siBase.porCod[cod];
+    if(siBase && !c){ omit.si++; continue; }
     data.push(["SI_CLIENTE",c?c.sc:"",c?c.rg:"",c?c.ds:"","","","",cod,saved.si[cod]]);
   }
   csvDump("ajustes_cuota.csv",
     ["NIVEL","SUBCANAL","REGION","DISTRIBUIDOR","Categoria","SubCanalCliente","TONS","CUSTOMER CODE","SOLES"],data);
+  const n=omit.reg+omit.cli+omit.si;
+  if(n) setTimeout(()=>alert("Se omitieron "+n+" ajustes guardados que no existen en la base publicada ("+
+    omit.reg+" regionales, "+omit.cli+" por cliente, "+omit.si+" de sell in). Son de una publicación anterior "+
+    "de la base, por ejemplo un cliente que cambió de región. El archivo exportado no los incluye."),300);
 };
 $("pubSI").onclick=async()=>{
   const m=$("siMsg"), f=$("csvSI").files[0]; m.className="msg";
