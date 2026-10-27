@@ -387,10 +387,18 @@ footer strong{color:var(--ink)}
 
     <hr>
     <h3>Ajustes</h3>
-    <p class="note">Un solo archivo con los ajustes de sell in y sell out, para el proceso de Python.</p>
+    <p class="note">Un archivo por tipo de ajuste, para el proceso de Python: el de sell in va en
+      <strong>ajustes\PE\sell_in</strong> y el de sell out en <strong>ajustes\PE\sell_out</strong>.
+      El nombre lleva la fecha y la hora; el proceso usa el más reciente de cada carpeta.</p>
     <div class="fila">
-      <button class="ghost" id="exp">Exportar ajustes</button>
+      <button class="ghost" id="expSO">Exportar sell out</button>
+      <button class="ghost" id="expSIaj">Exportar sell in</button>
       <button class="ghost" id="wipe">Borrar ajustes de este módulo</button>
+    </div>
+    <p class="note">Mientras el proceso no lea los archivos separados, usa este botón: descarga los dos
+      ajustes juntos en <strong>ajustes_cuota.csv</strong>, como hasta ahora.</p>
+    <div class="fila">
+      <button class="ghost small" id="exp">Exportar ambos (formato anterior)</button>
     </div>
   </div>
 </section>
@@ -1256,28 +1264,42 @@ $("wipe").onclick=async()=>{
   const limpio = modulo==="si" ? {si:{}} : {reg:{},cli:{}};
   await setDoc(ref,{reg:{},cli:{},si:{},...cur,...limpio,by:me,at:new Date().toISOString()});
 };
-$("exp").onclick=()=>{
-  // Solo los ajustes de celdas que existen en la base publicada hoy. Los guardados con una
-  // base anterior (por ejemplo, un cliente que cambió de región) se omiten y se avisa.
+// Ajustes para el proceso de Python. tipo: "so" (región y cliente), "si" (sell in por cliente) o "todo".
+// Solo se exportan los ajustes de celdas que existen en la base publicada hoy. Los guardados con una
+// base anterior (por ejemplo, un cliente que cambió de región) se omiten y se avisa.
+const CAB_AJUSTES=["NIVEL","SUBCANAL","REGION","DISTRIBUIDOR","Categoria","SubCanalCliente","TONS","CUSTOMER CODE","SOLES"];
+function selloLocal(){
+  const d=new Date(), z=n=>String(n).padStart(2,"0");
+  return d.getFullYear()+z(d.getMonth()+1)+z(d.getDate())+"_"+z(d.getHours())+z(d.getMinutes());
+}
+function exportarAjustes(tipo){
   const data=[], omit={reg:0,cli:0,si:0};
-  for(const lv of ["reg","cli"]) for(const k in saved[lv]){
+  if(tipo!=="si") for(const lv of ["reg","cli"]) for(const k in saved[lv]){
     if(!(base && base[lv] && k in base[lv].tot)){ omit[lv]++; continue; }
     const p=k.split(SEP);
     data.push(lv==="reg"?["REGION",p[0],p[1],"",p[2],p[3],saved.reg[k],"",""]
                         :["CLIENTE",p[0],p[1],p[2],p[3],p[4],saved.cli[k],"",""]);
   }
-  for(const cod in (saved.si||{})){
+  if(tipo!=="so") for(const cod in (saved.si||{})){
     const c=siBase && siBase.porCod[cod];
     if(siBase && !c){ omit.si++; continue; }
     data.push(["SI_CLIENTE",c?c.sc:"",c?c.rg:"",c?c.ds:"","","","",cod,saved.si[cod]]);
   }
-  csvDump("ajustes_cuota.csv",
-    ["NIVEL","SUBCANAL","REGION","DISTRIBUIDOR","Categoria","SubCanalCliente","TONS","CUSTOMER CODE","SOLES"],data);
+  const nombre = tipo==="todo" ? "ajustes_cuota.csv"
+               : "ajustes_"+(tipo==="si"?"SI":"SO")+"_PE_"+selloLocal()+".csv";
+  if(!data.length){
+    alert("No hay ajustes de "+(tipo==="si"?"sell in":tipo==="so"?"sell out":"sell in ni sell out")+
+      " guardados para exportar."); return;
+  }
+  csvDump(nombre, CAB_AJUSTES, data);
   const n=omit.reg+omit.cli+omit.si;
   if(n) setTimeout(()=>alert("Se omitieron "+n+" ajustes guardados que no existen en la base publicada ("+
     omit.reg+" regionales, "+omit.cli+" por cliente, "+omit.si+" de sell in). Son de una publicación anterior "+
     "de la base, por ejemplo un cliente que cambió de región. El archivo exportado no los incluye."),300);
-};
+}
+$("expSO").onclick=()=>exportarAjustes("so");
+$("expSIaj").onclick=()=>exportarAjustes("si");
+$("exp").onclick=()=>exportarAjustes("todo");
 $("pubSI").onclick=async()=>{
   const m=$("siMsg"), f=$("csvSI").files[0]; m.className="msg";
   if(!f){ m.className="msg err"; m.textContent="Elige el archivo Propuesta_SI_para_web."; return; }
