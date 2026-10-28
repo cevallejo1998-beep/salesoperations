@@ -960,7 +960,9 @@ function drawSI(){
   $("kTonsL").textContent="Total ingresado S/"; $("kIVL").textContent="Clientes";
   $("kDifL").textContent="Sin mix por categoría";
   $("levelNote").textContent="Escribe el total en soles de cada cliente; también puedes pegar una columna desde Excel. "+
-    "Se abre por categoría con el mix de la propuesta. Las toneladas, el NR y el GR se recalculan en el proceso.";
+    "Se abre por categoría con el mix de la propuesta. Las toneladas, el NR y el GR se recalculan en el proceso. "+
+    "Los clientes que no cambies se quedan con su propuesta. Para dejar un cliente en cero, escribe 0 "+
+    "(si borras el valor, también queda en cero).";
   if(!siBase){
     $("grid").innerHTML='<p class="note" style="padding:14px">Todavía no hay una propuesta de sell in publicada. Avisa a Sales Operations.</p>';
     $("siResSec").classList.add("hidden");
